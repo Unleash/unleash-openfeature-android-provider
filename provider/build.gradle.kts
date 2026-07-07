@@ -25,5 +25,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.openfeature.android.sdk)
+    implementation(libs.unleash.android)
     testImplementation(libs.junit)
+    testImplementation(libs.json)
 }
