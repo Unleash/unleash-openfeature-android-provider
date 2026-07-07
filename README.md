@@ -14,13 +14,13 @@ This is currently a scaffold with a runnable Android hello-world app. Provider i
 Gradle needs the Android SDK location before CLI tasks can run. Either export `ANDROID_HOME`:
 
 ```bash
-export ANDROID_HOME=/home/simon/Android/Sdk
+export ANDROID_HOME=/home/some-user/Android/Sdk
 ```
 
 Or create an untracked `local.properties` file in the repo root:
 
 ```properties
-sdk.dir=/home/simon/Android/Sdk
+sdk.dir=/home/some-user/Android/Sdk
 ```
 
 Android Studio usually creates `local.properties` automatically when opening the project. The file is ignored because SDK paths are machine-specific.
