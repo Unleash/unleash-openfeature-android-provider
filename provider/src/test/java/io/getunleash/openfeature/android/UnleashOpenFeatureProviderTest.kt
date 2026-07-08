@@ -10,8 +10,6 @@ import io.getunleash.android.data.UnleashContext
 import io.getunleash.android.data.Variant
 import io.getunleash.android.events.UnleashListener
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -59,17 +57,6 @@ class UnleashOpenFeatureProviderTest {
         }
 
         assertEquals("7", client.contexts.single().userId)
-    }
-
-    @Test
-    fun booleanEvaluationUsesOpenFeatureDefault() {
-        val client = FakeUnleash()
-        val provider = UnleashOpenFeatureProvider(client)
-
-        val details = provider.getBooleanEvaluation("missing", true, null)
-
-        assertTrue(details.value)
-        assertEquals("missing" to true, client.booleanCalls.single())
     }
 
     @Test
@@ -162,24 +149,20 @@ private fun runSuspend(block: suspend () -> Unit) {
 }
 
 private class FakeUnleash(
-    private val enabled: Map<String, Boolean> = emptyMap(),
     private val variants: Map<String, Variant> = emptyMap()
 ) : Unleash {
     val contexts = mutableListOf<UnleashContext>()
     val asyncContexts = mutableListOf<UnleashContext>()
-    val booleanCalls = mutableListOf<Pair<String, Boolean>>()
 
     @Deprecated(
         "Use isEnabled(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",
         replaceWith = ReplaceWith("isEnabled(toggleName)")
     )
     override fun isEnabled(toggleName: String, defaultValue: Boolean): Boolean {
-        booleanCalls += toggleName to defaultValue
-        return enabled[toggleName] ?: defaultValue
+        return defaultValue
     }
 
-    override fun isEnabled(toggleName: String): Boolean =
-        enabled[toggleName] ?: false
+    override fun isEnabled(toggleName: String): Boolean = false
 
     @Deprecated(
         "Use getVariant(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",

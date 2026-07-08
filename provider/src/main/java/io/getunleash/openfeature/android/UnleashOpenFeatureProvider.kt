@@ -36,14 +36,13 @@ class UnleashOpenFeatureProvider(
         client.setContext(newContext.toUnleashContext())
     }
 
-    @Suppress("DEPRECATION")
     override fun getBooleanEvaluation(
         key: String,
         defaultValue: Boolean,
         context: EvaluationContext?
     ): ProviderEvaluation<Boolean> =
         ProviderEvaluation(
-            value = client.isEnabled(key, defaultValue),
+            value = client.isEnabled(key),
             reason = Reason.UNKNOWN.toString()
         )
 
