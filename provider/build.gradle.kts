@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.spotless)
 }
 
 android {
@@ -29,4 +30,15 @@ dependencies {
     implementation(libs.unleash.android)
     testImplementation(libs.junit)
     testImplementation(libs.json)
+}
+
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        ktlint()
+    }
+    kotlinGradle {
+        target("*.gradle.kts")
+        ktlint()
+    }
 }

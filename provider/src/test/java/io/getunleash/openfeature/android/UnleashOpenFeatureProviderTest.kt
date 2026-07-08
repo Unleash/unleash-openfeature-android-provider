@@ -5,6 +5,7 @@ import dev.openfeature.sdk.ProviderEvaluation
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.ErrorCode
 import io.getunleash.android.Unleash
+import io.getunleash.android.data.Payload
 import io.getunleash.android.data.Toggle
 import io.getunleash.android.data.UnleashContext
 import io.getunleash.android.data.Variant
@@ -18,16 +19,18 @@ class UnleashOpenFeatureProviderTest {
     fun initializeSetsTheInitialContextAsync() {
         val client = FakeUnleash()
         val provider = UnleashOpenFeatureProvider(client)
-        val context = ImmutableContext(
-            targetingKey = "target-user",
-            attributes = mapOf(
-                "userId" to Value.String("attribute-user"),
-                "sessionId" to Value.Integer(42),
-                "remoteAddress" to Value.String("127.0.0.1"),
-                "plan" to Value.String("pro"),
-                "nested" to Value.Structure(mapOf("ignored" to Value.String("value"))),
+        val context =
+            ImmutableContext(
+                targetingKey = "target-user",
+                attributes =
+                    mapOf(
+                        "userId" to Value.String("attribute-user"),
+                        "sessionId" to Value.Integer(42),
+                        "remoteAddress" to Value.String("127.0.0.1"),
+                        "plan" to Value.String("pro"),
+                        "nested" to Value.Structure(mapOf("ignored" to Value.String("value"))),
+                    ),
             )
-        )
 
         runSuspend { provider.initialize(context) }
 
@@ -36,9 +39,9 @@ class UnleashOpenFeatureProviderTest {
                 userId = "target-user",
                 sessionId = "42",
                 remoteAddress = "127.0.0.1",
-                properties = mapOf("plan" to "pro")
+                properties = mapOf("plan" to "pro"),
             ),
-            client.asyncContexts.single()
+            client.asyncContexts.single(),
         )
     }
 
@@ -50,9 +53,10 @@ class UnleashOpenFeatureProviderTest {
         runSuspend {
             provider.onContextSet(
                 oldContext = null,
-                newContext = ImmutableContext(
-                    attributes = mapOf("userId" to Value.String("7"))
-                )
+                newContext =
+                    ImmutableContext(
+                        attributes = mapOf("userId" to Value.String("7")),
+                    ),
             )
         }
 
@@ -61,17 +65,20 @@ class UnleashOpenFeatureProviderTest {
 
     @Test
     fun stringEvaluationResolvesCsvPayloadAsRawString() {
-        val provider = UnleashOpenFeatureProvider(
-            FakeUnleash(
-                variants = mapOf(
-                    "flag" to Variant(
-                        name = "variant",
-                        enabled = true,
-                        payload = io.getunleash.android.data.Payload("csv", "a,b,c")
-                    )
-                )
+        val provider =
+            UnleashOpenFeatureProvider(
+                FakeUnleash(
+                    variants =
+                        mapOf(
+                            "flag" to
+                                Variant(
+                                    name = "variant",
+                                    enabled = true,
+                                    payload = Payload("csv", "a,b,c"),
+                                ),
+                        ),
+                ),
             )
-        )
 
         val details = provider.getStringEvaluation("flag", "default", null)
 
@@ -81,39 +88,45 @@ class UnleashOpenFeatureProviderTest {
 
     @Test
     fun objectEvaluationResolvesJsonArrayPayload() {
-        val provider = UnleashOpenFeatureProvider(
-            FakeUnleash(
-                variants = mapOf(
-                    "flag" to Variant(
-                        name = "variant",
-                        enabled = true,
-                        payload = io.getunleash.android.data.Payload("json", "[1,2,3]")
-                    )
-                )
+        val provider =
+            UnleashOpenFeatureProvider(
+                FakeUnleash(
+                    variants =
+                        mapOf(
+                            "flag" to
+                                Variant(
+                                    name = "variant",
+                                    enabled = true,
+                                    payload = Payload("json", "[1,2,3]"),
+                                ),
+                        ),
+                ),
             )
-        )
 
         val details = provider.getObjectEvaluation("flag", Value.Null, null)
 
         assertEquals(
             Value.List(listOf(Value.Integer(1), Value.Integer(2), Value.Integer(3))),
-            details.value
+            details.value,
         )
     }
 
     @Test
     fun emptyNumberPayloadReturnsParseError() {
-        val provider = UnleashOpenFeatureProvider(
-            FakeUnleash(
-                variants = mapOf(
-                    "flag" to Variant(
-                        name = "variant",
-                        enabled = true,
-                        payload = io.getunleash.android.data.Payload("number", "")
-                    )
-                )
+        val provider =
+            UnleashOpenFeatureProvider(
+                FakeUnleash(
+                    variants =
+                        mapOf(
+                            "flag" to
+                                Variant(
+                                    name = "variant",
+                                    enabled = true,
+                                    payload = Payload("number", ""),
+                                ),
+                        ),
+                ),
             )
-        )
 
         val details: ProviderEvaluation<Int> = provider.getIntegerEvaluation("flag", 5, null)
 
@@ -123,17 +136,20 @@ class UnleashOpenFeatureProviderTest {
 
     @Test
     fun disabledVariantReturnsDefaultValue() {
-        val provider = UnleashOpenFeatureProvider(
-            FakeUnleash(
-                variants = mapOf(
-                    "flag" to Variant(
-                        name = "disabled",
-                        enabled = false,
-                        payload = io.getunleash.android.data.Payload("string", "live")
-                    )
-                )
+        val provider =
+            UnleashOpenFeatureProvider(
+                FakeUnleash(
+                    variants =
+                        mapOf(
+                            "flag" to
+                                Variant(
+                                    name = "disabled",
+                                    enabled = false,
+                                    payload = Payload("string", "live"),
+                                ),
+                        ),
+                ),
             )
-        )
 
         val details = provider.getStringEvaluation("flag", "default", null)
 
@@ -149,36 +165,41 @@ private fun runSuspend(block: suspend () -> Unit) {
 }
 
 private class FakeUnleash(
-    private val variants: Map<String, Variant> = emptyMap()
+    private val variants: Map<String, Variant> = emptyMap(),
 ) : Unleash {
     val contexts = mutableListOf<UnleashContext>()
     val asyncContexts = mutableListOf<UnleashContext>()
 
     @Deprecated(
         "Use isEnabled(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",
-        replaceWith = ReplaceWith("isEnabled(toggleName)")
+        replaceWith = ReplaceWith("isEnabled(toggleName)"),
     )
-    override fun isEnabled(toggleName: String, defaultValue: Boolean): Boolean {
-        return defaultValue
-    }
+    override fun isEnabled(
+        toggleName: String,
+        defaultValue: Boolean,
+    ): Boolean = defaultValue
 
     override fun isEnabled(toggleName: String): Boolean = false
 
     @Deprecated(
         "Use getVariant(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",
-        replaceWith = ReplaceWith("getVariant(toggleName)")
+        replaceWith = ReplaceWith("getVariant(toggleName)"),
     )
-    override fun getVariant(toggleName: String, defaultValue: Variant): Variant =
-        variants[toggleName] ?: defaultValue
+    override fun getVariant(
+        toggleName: String,
+        defaultValue: Variant,
+    ): Variant = variants[toggleName] ?: defaultValue
 
-    override fun getVariant(toggleName: String): Variant =
-        variants[toggleName] ?: Variant("disabled")
+    override fun getVariant(toggleName: String): Variant = variants[toggleName] ?: Variant("disabled")
 
     override fun setContext(context: UnleashContext) {
         contexts += context
     }
 
-    override fun setContextWithTimeout(context: UnleashContext, timeout: Long) {
+    override fun setContextWithTimeout(
+        context: UnleashContext,
+        timeout: Long,
+    ) {
         contexts += context
     }
 
@@ -209,7 +230,7 @@ private class FakeUnleash(
     override fun start(
         eventListeners: List<UnleashListener>,
         bootstrapFile: File?,
-        bootstrap: List<Toggle>
+        bootstrap: List<Toggle>,
     ) {
     }
 

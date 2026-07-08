@@ -39,5 +39,6 @@ private fun Value.asUnleashString(): String? =
         is Value.String -> string
         is Value.List,
         Value.Null,
-        is Value.Structure -> null
+        is Value.Structure,
+        -> null
     }

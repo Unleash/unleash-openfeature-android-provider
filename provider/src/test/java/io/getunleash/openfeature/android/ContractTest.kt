@@ -34,13 +34,13 @@ class ContractTest {
             assertJsonEquals(
                 scenario.getString("id"),
                 expected.get("value"),
-                details.value.toJsonCompatible()
+                details.value.toJsonCompatible(),
             )
             if (expected.has("variant")) {
                 assertEquals(
                     scenario.getString("id"),
                     expected.getString("variant"),
-                    details.variant
+                    details.variant,
                 )
             }
         }
@@ -48,32 +48,36 @@ class ContractTest {
 
     private fun evaluate(
         provider: UnleashOpenFeatureProvider,
-        scenario: JSONObject
+        scenario: JSONObject,
     ): ProviderEvaluation<*> {
         val flagKey = scenario.getString("flagKey")
         val context = scenario.optJSONObject("context")?.toEvaluationContext()
 
         return when (scenario.getString("type")) {
-            "boolean" -> provider.getBooleanEvaluation(
-                flagKey,
-                scenario.getBoolean("default"),
-                context
-            )
-            "string" -> provider.getStringEvaluation(
-                flagKey,
-                scenario.getString("default"),
-                context
-            )
-            "number" -> provider.getDoubleEvaluation(
-                flagKey,
-                scenario.getDouble("default"),
-                context
-            )
-            "object" -> provider.getObjectEvaluation(
-                flagKey,
-                scenario.get("default").toOpenFeatureValue(),
-                context
-            )
+            "boolean" ->
+                provider.getBooleanEvaluation(
+                    flagKey,
+                    scenario.getBoolean("default"),
+                    context,
+                )
+            "string" ->
+                provider.getStringEvaluation(
+                    flagKey,
+                    scenario.getString("default"),
+                    context,
+                )
+            "number" ->
+                provider.getDoubleEvaluation(
+                    flagKey,
+                    scenario.getDouble("default"),
+                    context,
+                )
+            "object" ->
+                provider.getObjectEvaluation(
+                    flagKey,
+                    scenario.get("default").toOpenFeatureValue(),
+                    context,
+                )
             else -> error("Unsupported contract scenario type: ${scenario.getString("type")}")
         }
     }
@@ -90,10 +94,11 @@ private fun loadFrontendToggles(file: File): Map<String, FixtureToggle> {
     val toggles = JSONObject(file.readText()).getJSONArray("toggles")
     return toggles.jsonObjects().associate { toggle ->
         val name = toggle.getString("name")
-        name to FixtureToggle(
-            enabled = toggle.getBoolean("enabled"),
-            variant = toggle.getJSONObject("variant").toVariant()
-        )
+        name to
+            FixtureToggle(
+                enabled = toggle.getBoolean("enabled"),
+                variant = toggle.getJSONObject("variant").toVariant(),
+            )
     }
 }
 
@@ -102,12 +107,13 @@ private fun JSONObject.toVariant(): Variant =
         name = getString("name"),
         enabled = getBoolean("enabled"),
         featureEnabled = getBoolean("feature_enabled"),
-        payload = optJSONObject("payload")?.let { payload ->
-            Payload(
-                type = payload.getString("type"),
-                value = payload.getString("value")
-            )
-        }
+        payload =
+            optJSONObject("payload")?.let { payload ->
+                Payload(
+                    type = payload.getString("type"),
+                    value = payload.getString("value"),
+                )
+            },
     )
 
 private fun JSONObject.toEvaluationContext(): ImmutableContext {
@@ -124,15 +130,17 @@ private fun JSONObject.toEvaluationContext(): ImmutableContext {
 private fun Any?.toOpenFeatureValue(): Value =
     when (this) {
         null,
-        JSONObject.NULL -> Value.Null
+        JSONObject.NULL,
+        -> Value.Null
         is Boolean -> Value.Boolean(this)
         is Int -> Value.Integer(this)
         is Number -> Value.Double(toDouble())
         is String -> Value.String(this)
         is JSONArray -> Value.List(values().map { it.toOpenFeatureValue() })
-        is JSONObject -> Value.Structure(
-            stringKeys().associateWith { key -> get(key).toOpenFeatureValue() }
-        )
+        is JSONObject ->
+            Value.Structure(
+                stringKeys().associateWith { key -> get(key).toOpenFeatureValue() },
+            )
         else -> error("Unsupported JSON value: $this")
     }
 
@@ -149,11 +157,9 @@ private fun Any?.toJsonCompatible(): Any? =
         else -> this
     }
 
-private fun JSONArray.values(): List<Any?> =
-    (0 until length()).map { index -> get(index) }
+private fun JSONArray.values(): List<Any?> = (0 until length()).map { index -> get(index) }
 
-private fun JSONArray.jsonObjects(): List<JSONObject> =
-    (0 until length()).map { index -> getJSONObject(index) }
+private fun JSONArray.jsonObjects(): List<JSONObject> = (0 until length()).map { index -> getJSONObject(index) }
 
 private fun JSONObject.stringKeys(): List<String> {
     val result = mutableListOf<String>()
@@ -164,7 +170,11 @@ private fun JSONObject.stringKeys(): List<String> {
     return result
 }
 
-private fun assertJsonEquals(scenarioId: String, expected: Any?, actual: Any?) {
+private fun assertJsonEquals(
+    scenarioId: String,
+    expected: Any?,
+    actual: Any?,
+) {
     when {
         expected is JSONObject && actual is Map<*, *> -> {
             assertEquals("$scenarioId object keys", expected.stringKeys().toSet(), actual.keys)
@@ -192,27 +202,31 @@ private fun assertJsonEquals(scenarioId: String, expected: Any?, actual: Any?) {
 
 private data class FixtureToggle(
     val enabled: Boolean,
-    val variant: Variant
+    val variant: Variant,
 )
 
 private class FrontendFixtureUnleash(
-    private val toggles: Map<String, FixtureToggle>
+    private val toggles: Map<String, FixtureToggle>,
 ) : Unleash {
     @Deprecated(
         "Use isEnabled(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",
-        replaceWith = ReplaceWith("isEnabled(toggleName)")
+        replaceWith = ReplaceWith("isEnabled(toggleName)"),
     )
-    override fun isEnabled(toggleName: String, defaultValue: Boolean): Boolean =
-        toggles[toggleName]?.enabled ?: defaultValue
+    override fun isEnabled(
+        toggleName: String,
+        defaultValue: Boolean,
+    ): Boolean = toggles[toggleName]?.enabled ?: defaultValue
 
-    override fun isEnabled(toggleName: String): Boolean =
-        toggles[toggleName]?.enabled ?: false
+    override fun isEnabled(toggleName: String): Boolean = toggles[toggleName]?.enabled ?: false
 
     @Deprecated(
         "Use getVariant(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",
-        replaceWith = ReplaceWith("getVariant(toggleName)")
+        replaceWith = ReplaceWith("getVariant(toggleName)"),
     )
-    override fun getVariant(toggleName: String, defaultValue: Variant): Variant =
+    override fun getVariant(
+        toggleName: String,
+        defaultValue: Variant,
+    ): Variant =
         if (toggles[toggleName]?.enabled == true) {
             toggles.getValue(toggleName).variant
         } else {
@@ -229,7 +243,10 @@ private class FrontendFixtureUnleash(
     override fun setContext(context: UnleashContext) {
     }
 
-    override fun setContextWithTimeout(context: UnleashContext, timeout: Long) {
+    override fun setContextWithTimeout(
+        context: UnleashContext,
+        timeout: Long,
+    ) {
     }
 
     override fun setContextAsync(context: UnleashContext) {
@@ -258,7 +275,7 @@ private class FrontendFixtureUnleash(
     override fun start(
         eventListeners: List<UnleashListener>,
         bootstrapFile: File?,
-        bootstrap: List<Toggle>
+        bootstrap: List<Toggle>,
     ) {
     }
 

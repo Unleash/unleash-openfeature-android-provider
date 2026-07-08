@@ -17,7 +17,7 @@ import org.json.JSONTokener
 
 class UnleashOpenFeatureProvider(
     private val client: Unleash,
-    override val hooks: List<Hook<*>> = emptyList()
+    override val hooks: List<Hook<*>> = emptyList(),
 ) : FeatureProvider {
     override val metadata: ProviderMetadata = Metadata("unleash-openfeature-android-provider")
 
@@ -31,7 +31,7 @@ class UnleashOpenFeatureProvider(
 
     override suspend fun onContextSet(
         oldContext: EvaluationContext?,
-        newContext: EvaluationContext
+        newContext: EvaluationContext,
     ) {
         client.setContext(newContext.toUnleashContext())
     }
@@ -39,17 +39,17 @@ class UnleashOpenFeatureProvider(
     override fun getBooleanEvaluation(
         key: String,
         defaultValue: Boolean,
-        context: EvaluationContext?
+        context: EvaluationContext?,
     ): ProviderEvaluation<Boolean> =
         ProviderEvaluation(
             value = client.isEnabled(key),
-            reason = Reason.UNKNOWN.toString()
+            reason = Reason.UNKNOWN.toString(),
         )
 
     override fun getStringEvaluation(
         key: String,
         defaultValue: String,
-        context: EvaluationContext?
+        context: EvaluationContext?,
     ): ProviderEvaluation<String> =
         resolvePayload(key, defaultValue, setOf("string", "csv")) { payload ->
             payload.value
@@ -58,7 +58,7 @@ class UnleashOpenFeatureProvider(
     override fun getIntegerEvaluation(
         key: String,
         defaultValue: Int,
-        context: EvaluationContext?
+        context: EvaluationContext?,
     ): ProviderEvaluation<Int> =
         resolvePayload(key, defaultValue, setOf("number")) { payload ->
             payload.value.toInt()
@@ -67,7 +67,7 @@ class UnleashOpenFeatureProvider(
     override fun getDoubleEvaluation(
         key: String,
         defaultValue: Double,
-        context: EvaluationContext?
+        context: EvaluationContext?,
     ): ProviderEvaluation<Double> =
         resolvePayload(key, defaultValue, setOf("number")) { payload ->
             payload.value.toDouble()
@@ -76,7 +76,7 @@ class UnleashOpenFeatureProvider(
     override fun getObjectEvaluation(
         key: String,
         defaultValue: Value,
-        context: EvaluationContext?
+        context: EvaluationContext?,
     ): ProviderEvaluation<Value> =
         resolvePayload(key, defaultValue, setOf("json")) { payload ->
             payload.value.toOpenFeatureValue()
@@ -86,7 +86,7 @@ class UnleashOpenFeatureProvider(
         key: String,
         defaultValue: T,
         expectedPayloadTypes: Set<String>,
-        convert: (Payload) -> T
+        convert: (Payload) -> T,
     ): ProviderEvaluation<T> {
         val variant = client.getVariant(key)
         val payload = variant.payload
@@ -95,7 +95,7 @@ class UnleashOpenFeatureProvider(
             return ProviderEvaluation(
                 value = defaultValue,
                 variant = variant.name,
-                reason = Reason.UNKNOWN.toString()
+                reason = Reason.UNKNOWN.toString(),
             )
         }
 
@@ -105,7 +105,7 @@ class UnleashOpenFeatureProvider(
                 variant = variant.name,
                 reason = Reason.ERROR.toString(),
                 errorCode = ErrorCode.TYPE_MISMATCH,
-                errorMessage = "Variant payload type '${payload.type}' is not one of $expectedPayloadTypes"
+                errorMessage = "Variant payload type '${payload.type}' is not one of $expectedPayloadTypes",
             )
         }
 
@@ -113,7 +113,7 @@ class UnleashOpenFeatureProvider(
             ProviderEvaluation(
                 value = convert(payload),
                 variant = variant.name,
-                reason = Reason.UNKNOWN.toString()
+                reason = Reason.UNKNOWN.toString(),
             )
         } catch (error: NumberFormatException) {
             parseError(defaultValue, variant, error.message)
@@ -125,17 +125,19 @@ class UnleashOpenFeatureProvider(
     private fun <T> parseError(
         defaultValue: T,
         variant: Variant,
-        message: String?
+        message: String?,
     ): ProviderEvaluation<T> =
         ProviderEvaluation(
             value = defaultValue,
             variant = variant.name,
             reason = Reason.ERROR.toString(),
             errorCode = ErrorCode.PARSE_ERROR,
-            errorMessage = message
+            errorMessage = message,
         )
 
-    private data class Metadata(override val name: String?) : ProviderMetadata
+    private data class Metadata(
+        override val name: String?,
+    ) : ProviderMetadata
 }
 
 private fun String.toOpenFeatureValue(): Value =
@@ -163,7 +165,7 @@ private fun JSONArray.toOpenFeatureValue(): Value =
                 is String -> Value.String(value)
                 else -> throw IllegalArgumentException("Unsupported JSON array value: $value")
             }
-        }
+        },
     )
 
 private fun JSONObject.toOpenFeatureValue(): Value {
@@ -171,16 +173,17 @@ private fun JSONObject.toOpenFeatureValue(): Value {
     val keys = keys()
     while (keys.hasNext()) {
         val key = keys.next()
-        structure[key] = when (val value = get(key)) {
-            is JSONArray -> value.toOpenFeatureValue()
-            is JSONObject -> value.toOpenFeatureValue()
-            JSONObject.NULL -> Value.Null
-            is Boolean -> Value.Boolean(value)
-            is Int -> Value.Integer(value)
-            is Number -> Value.Double(value.toDouble())
-            is String -> Value.String(value)
-            else -> throw IllegalArgumentException("Unsupported JSON object value: $value")
-        }
+        structure[key] =
+            when (val value = get(key)) {
+                is JSONArray -> value.toOpenFeatureValue()
+                is JSONObject -> value.toOpenFeatureValue()
+                JSONObject.NULL -> Value.Null
+                is Boolean -> Value.Boolean(value)
+                is Int -> Value.Integer(value)
+                is Number -> Value.Double(value.toDouble())
+                is String -> Value.String(value)
+                else -> throw IllegalArgumentException("Unsupported JSON object value: $value")
+            }
     }
     return Value.Structure(structure)
 }
