@@ -2,7 +2,7 @@
 
 Android provider for Unleash and OpenFeature.
 
-This is currently a scaffold with a runnable Android hello-world app. Provider implementation comes next.
+This is currently a scaffold with a runnable Android hello-world app and provider contract tests.
 
 ## Requirements
 
@@ -24,6 +24,30 @@ sdk.dir=/home/some-user/Android/Sdk
 ```
 
 Android Studio usually creates `local.properties` automatically when opening the project. The file is ignored because SDK paths are machine-specific.
+
+## Verifier Submodule
+
+The provider contract tests read the shared OpenFeature/Unleash verifier spec from `verifier/`.
+After cloning the repo, initialize the submodule:
+
+```bash
+git submodule update --init --recursive
+```
+
+To refresh the verifier to the pinned commit after pulling:
+
+```bash
+git submodule update --recursive
+```
+
+To intentionally move the verifier forward:
+
+```bash
+git -C verifier fetch
+git -C verifier checkout main
+git -C verifier pull --ff-only
+git add verifier
+```
 
 ## Build
 
