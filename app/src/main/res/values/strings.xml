@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Unleash OpenFeature</string>
-    <string name="hello_android">Hello Android OpenFeature Unleash</string>
+    <string name="loading_flag">Configuring OpenFeature provider...</string>
+    <string name="flag_status">example-flag enabled: %1$s</string>
+    <string name="flag_error">OpenFeature provider failed: %1$s</string>
 </resources>

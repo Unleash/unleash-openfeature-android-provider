@@ -21,7 +21,10 @@ class ContractTest {
         val specRoot = File("../verifier/spec")
         val contract = JSONObject(File(specRoot, "contract.json").readText())
         val toggles = loadFrontendToggles(File(specRoot, "fixtures/frontend-toggles.json"))
-        val provider = UnleashOpenFeatureProvider(FrontendFixtureUnleash(toggles))
+        val provider =
+            UnleashOpenFeatureProvider(
+                clientFactory = { FrontendFixtureUnleash(toggles) },
+            )
 
         for (scenario in contract.getJSONArray("scenarios").jsonObjects()) {
             if (!appliesToAndroid(scenario)) {

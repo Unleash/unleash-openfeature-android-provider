@@ -29,6 +29,8 @@ android {
 dependencies {
     implementation(project(":provider"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.openfeature.android.sdk)
+    implementation(libs.unleash.android)
 }
 
 spotless {

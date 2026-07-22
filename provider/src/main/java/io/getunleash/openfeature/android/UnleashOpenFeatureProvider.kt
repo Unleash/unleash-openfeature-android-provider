@@ -1,5 +1,6 @@
 package io.getunleash.openfeature.android
 
+import android.content.Context
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -8,17 +9,41 @@ import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.ErrorCode
+import io.getunleash.android.DefaultUnleash
 import io.getunleash.android.Unleash
+import io.getunleash.android.UnleashConfig
 import io.getunleash.android.data.Payload
+import io.getunleash.android.data.UnleashContext
 import io.getunleash.android.data.Variant
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
 
-class UnleashOpenFeatureProvider(
+class UnleashOpenFeatureProvider private constructor(
     private val client: Unleash,
-    override val hooks: List<Hook<*>> = emptyList(),
+    hooks: List<Hook<*>>,
 ) : FeatureProvider {
+    constructor(
+        androidContext: Context,
+        unleashConfig: UnleashConfig,
+        unleashContext: UnleashContext = UnleashContext(),
+        hooks: List<Hook<*>> = emptyList(),
+    ) : this(
+        DefaultUnleash(
+            androidContext = androidContext,
+            unleashConfig = unleashConfig,
+            unleashContext = unleashContext,
+        ),
+        hooks,
+    )
+
+    internal constructor(
+        clientFactory: () -> Unleash,
+        hooks: List<Hook<*>> = emptyList(),
+    ) : this(clientFactory(), hooks)
+
+    override val hooks: List<Hook<*>> = hooks
+
     override val metadata: ProviderMetadata = Metadata("unleash-openfeature-android-provider")
 
     override suspend fun initialize(initialContext: EvaluationContext?) {

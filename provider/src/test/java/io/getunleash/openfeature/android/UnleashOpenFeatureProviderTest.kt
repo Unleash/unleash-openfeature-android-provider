@@ -18,7 +18,7 @@ class UnleashOpenFeatureProviderTest {
     @Test
     fun initializeSetsTheInitialContextAsync() {
         val client = FakeUnleash()
-        val provider = UnleashOpenFeatureProvider(client)
+        val provider = UnleashOpenFeatureProvider(clientFactory = { client })
         val context =
             ImmutableContext(
                 targetingKey = "target-user",
@@ -48,7 +48,7 @@ class UnleashOpenFeatureProviderTest {
     @Test
     fun onContextSetRefreshesUnleashContextSynchronously() {
         val client = FakeUnleash()
-        val provider = UnleashOpenFeatureProvider(client)
+        val provider = UnleashOpenFeatureProvider(clientFactory = { client })
 
         runSuspend {
             provider.onContextSet(
@@ -67,17 +67,19 @@ class UnleashOpenFeatureProviderTest {
     fun stringEvaluationResolvesCsvPayloadAsRawString() {
         val provider =
             UnleashOpenFeatureProvider(
-                FakeUnleash(
-                    variants =
-                        mapOf(
-                            "flag" to
-                                Variant(
-                                    name = "variant",
-                                    enabled = true,
-                                    payload = Payload("csv", "a,b,c"),
-                                ),
-                        ),
-                ),
+                clientFactory = {
+                    FakeUnleash(
+                        variants =
+                            mapOf(
+                                "flag" to
+                                    Variant(
+                                        name = "variant",
+                                        enabled = true,
+                                        payload = Payload("csv", "a,b,c"),
+                                    ),
+                            ),
+                    )
+                },
             )
 
         val details = provider.getStringEvaluation("flag", "default", null)
@@ -90,17 +92,19 @@ class UnleashOpenFeatureProviderTest {
     fun objectEvaluationResolvesJsonArrayPayload() {
         val provider =
             UnleashOpenFeatureProvider(
-                FakeUnleash(
-                    variants =
-                        mapOf(
-                            "flag" to
-                                Variant(
-                                    name = "variant",
-                                    enabled = true,
-                                    payload = Payload("json", "[1,2,3]"),
-                                ),
-                        ),
-                ),
+                clientFactory = {
+                    FakeUnleash(
+                        variants =
+                            mapOf(
+                                "flag" to
+                                    Variant(
+                                        name = "variant",
+                                        enabled = true,
+                                        payload = Payload("json", "[1,2,3]"),
+                                    ),
+                            ),
+                    )
+                },
             )
 
         val details = provider.getObjectEvaluation("flag", Value.Null, null)
@@ -115,17 +119,19 @@ class UnleashOpenFeatureProviderTest {
     fun emptyNumberPayloadReturnsParseError() {
         val provider =
             UnleashOpenFeatureProvider(
-                FakeUnleash(
-                    variants =
-                        mapOf(
-                            "flag" to
-                                Variant(
-                                    name = "variant",
-                                    enabled = true,
-                                    payload = Payload("number", ""),
-                                ),
-                        ),
-                ),
+                clientFactory = {
+                    FakeUnleash(
+                        variants =
+                            mapOf(
+                                "flag" to
+                                    Variant(
+                                        name = "variant",
+                                        enabled = true,
+                                        payload = Payload("number", ""),
+                                    ),
+                            ),
+                    )
+                },
             )
 
         val details: ProviderEvaluation<Int> = provider.getIntegerEvaluation("flag", 5, null)
@@ -138,17 +144,19 @@ class UnleashOpenFeatureProviderTest {
     fun disabledVariantReturnsDefaultValue() {
         val provider =
             UnleashOpenFeatureProvider(
-                FakeUnleash(
-                    variants =
-                        mapOf(
-                            "flag" to
-                                Variant(
-                                    name = "disabled",
-                                    enabled = false,
-                                    payload = Payload("string", "live"),
-                                ),
-                        ),
-                ),
+                clientFactory = {
+                    FakeUnleash(
+                        variants =
+                            mapOf(
+                                "flag" to
+                                    Variant(
+                                        name = "disabled",
+                                        enabled = false,
+                                        payload = Payload("string", "live"),
+                                    ),
+                            ),
+                    )
+                },
             )
 
         val details = provider.getStringEvaluation("flag", "default", null)
