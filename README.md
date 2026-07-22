@@ -2,8 +2,6 @@
 
 Android provider for Unleash and OpenFeature.
 
-This is currently a scaffold with a runnable Android hello-world app and provider contract tests.
-
 ## Requirements
 
 - JDK 17+
