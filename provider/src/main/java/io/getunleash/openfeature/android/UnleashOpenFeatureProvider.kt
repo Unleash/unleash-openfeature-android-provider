@@ -31,7 +31,20 @@ class UnleashOpenFeatureProvider private constructor(
     ) : this(
         DefaultUnleash(
             androidContext = androidContext,
-            unleashConfig = unleashConfig,
+            unleashConfig =
+                unleashConfig.copy(
+                    unleashConfig.proxyUrl,
+                    unleashConfig.clientKey,
+                    unleashConfig.appName,
+                    unleashConfig.localStorageConfig,
+                    unleashConfig.pollingStrategy,
+                    unleashConfig.metricsStrategy,
+                    unleashConfig.delayedInitialization,
+                    unleashConfig.forceImpressionData,
+                    SDK_FLAVOUR,
+                    SDK_FLAVOUR_VERSION,
+                    unleashConfig.httpClient,
+                ),
             unleashContext = unleashContext,
         ),
         hooks,
@@ -164,6 +177,9 @@ class UnleashOpenFeatureProvider private constructor(
         override val name: String?,
     ) : ProviderMetadata
 }
+
+private const val SDK_FLAVOUR = "unleash-openfeature-android-provider"
+private val SDK_FLAVOUR_VERSION = BuildConfig.SDK_FLAVOUR_VERSION
 
 private fun String.toOpenFeatureValue(): Value =
     when (val value = JSONTokener(this).nextValue()) {

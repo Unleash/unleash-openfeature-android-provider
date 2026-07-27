@@ -1,0 +1,34 @@
+project:
+  name: unleash-openfeature-android-provider
+  description: Android provider for Unleash and OpenFeature.
+  longDescription: Android provider for using Unleash through the OpenFeature Android SDK.
+  authors:
+    - Unleash
+  license: Apache-2.0
+  inceptionYear: 2026
+  links:
+    homepage: https://github.com/Unleash/unleash-openfeature-android-provider
+
+release:
+  github:
+    owner: Unleash
+    name: unleash-openfeature-android-provider
+    skipTag: true
+    skipRelease: true
+    uploadAssets: NEVER
+
+signing:
+  pgp:
+    active: ALWAYS
+    armored: true
+
+deploy:
+  maven:
+    mavenCentral:
+      sonatype:
+        active: RELEASE
+        url: https://central.sonatype.com/api/v1/publisher
+        stagingRepositories:
+          - provider/build/staging-deploy
+        retryDelay: 60
+        maxRetries: 40
