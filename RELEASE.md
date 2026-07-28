@@ -65,6 +65,8 @@ Before the first release:
 3. Store the token name as `JRELEASER_MAVENCENTRAL_USERNAME`.
 4. Store the token value as `JRELEASER_MAVENCENTRAL_TOKEN`.
 
+This project publishes an Android AAR. JReleaser is configured to sign artifacts and verify sources/Javadocs are staged, but its PomChecker-based POM verification is disabled because PomChecker does not understand Maven POMs with `<packaging>aar</packaging>`.
+
 ## Local Dry Run
 
 Stage the Maven publication locally:

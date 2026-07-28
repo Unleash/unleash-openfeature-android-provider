@@ -28,6 +28,12 @@ deploy:
       sonatype:
         active: RELEASE
         url: https://central.sonatype.com/api/v1/publisher
+        sign: true
+        checksums: true
+        sourceJar: true
+        javadocJar: true
+        verifyPom: false
+        applyMavenCentralRules: false
         stagingRepositories:
           - provider/build/staging-deploy
         retryDelay: 60
