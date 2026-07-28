@@ -61,40 +61,12 @@ git add verifier
 
 ## Release
 
-Releases are published from the manual `Release` GitHub Actions workflow on `main`.
-The workflow reads `VERSION_NAME` from `gradle.properties`, validates that the `v<version>` tag does not already exist, creates and pushes the tag, publishes the `:provider` Android AAR to Maven Central through Central Portal, and creates a GitHub release.
+Release setup and publishing steps are documented in [RELEASE.md](./RELEASE.md).
 
 The published coordinates are:
 
 ```kotlin
 implementation("io.getunleash:unleash-openfeature-android-provider:<version>")
-```
-
-Required GitHub Actions secrets:
-
-- `JRELEASER_GPG_PUBLIC_KEY`
-- `JRELEASER_GPG_SECRET_KEY`
-- `JRELEASER_GPG_PASSPHRASE`
-- `JRELEASER_MAVENCENTRAL_USERNAME`
-- `JRELEASER_MAVENCENTRAL_TOKEN`
-
-To create a release signing key:
-
-```bash
-gpg --full-generate-key
-gpg --list-secret-keys --keyid-format LONG
-gpg --armor --export <KEY_ID> > public.asc
-gpg --armor --export-secret-keys <KEY_ID> > secret.asc
-```
-
-Use the contents of `public.asc` for `JRELEASER_GPG_PUBLIC_KEY`, the contents of `secret.asc` for `JRELEASER_GPG_SECRET_KEY`, and the key passphrase for `JRELEASER_GPG_PASSPHRASE`.
-
-Before the first release, make sure the `io.getunleash` namespace is available in Sonatype Central Portal and generate a Central Portal user token. Store the token name as `JRELEASER_MAVENCENTRAL_USERNAME` and the token value as `JRELEASER_MAVENCENTRAL_TOKEN`.
-
-To dry-run the staging step locally:
-
-```bash
-./gradlew :provider:publishReleasePublicationToStagingRepository
 ```
 
 ## Run Example
