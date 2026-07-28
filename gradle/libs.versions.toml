@@ -4,9 +4,10 @@ kotlin = "2.2.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 openFeature = "0.4.1"
-unleashAndroid = "3.2.3"
+unleashAndroid = "3.3.1"
 json = "20250517"
 spotless = "7.0.4"
+jreleaser = "1.25.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -20,3 +21,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
