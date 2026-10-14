@@ -15,19 +15,31 @@ import io.getunleash.android.UnleashConfig
 import io.getunleash.android.data.Payload
 import io.getunleash.android.data.UnleashContext
 import io.getunleash.android.data.Variant
+import io.getunleash.android.events.UnleashReadyListener
+import io.getunleash.android.util.UnleashLogger
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class UnleashOpenFeatureProvider private constructor(
     private val client: Unleash,
     hooks: List<Hook<*>>,
+    private val initializationTimeout: Duration,
+    private val startDispatcher: CoroutineDispatcher,
 ) : FeatureProvider {
     constructor(
         androidContext: Context,
         unleashConfig: UnleashConfig,
         unleashContext: UnleashContext = UnleashContext(),
         hooks: List<Hook<*>> = emptyList(),
+        initializationTimeout: Duration = DEFAULT_INITIALIZATION_TIMEOUT,
     ) : this(
         DefaultUnleash(
             androidContext = androidContext,
@@ -39,12 +51,16 @@ class UnleashOpenFeatureProvider private constructor(
             unleashContext = unleashContext,
         ),
         hooks,
+        initializationTimeout,
+        Dispatchers.Main,
     )
 
     internal constructor(
         clientFactory: () -> Unleash,
         hooks: List<Hook<*>> = emptyList(),
-    ) : this(clientFactory(), hooks)
+        initializationTimeout: Duration = DEFAULT_INITIALIZATION_TIMEOUT,
+        startDispatcher: CoroutineDispatcher = Dispatchers.Unconfined,
+    ) : this(clientFactory(), hooks, initializationTimeout, startDispatcher)
 
     override val hooks: List<Hook<*>> = hooks
 
@@ -52,6 +68,37 @@ class UnleashOpenFeatureProvider private constructor(
 
     override suspend fun initialize(initialContext: EvaluationContext?) {
         client.setContextAsync(initialContext.toUnleashContext())
+
+        withContext(startDispatcher) { client.start() }
+
+        if (!awaitFirstFetch()) {
+            UnleashLogger.w(
+                TAG,
+                "Unleash was not ready within $initializationTimeout, " +
+                    "serving defaults until the first fetch lands",
+            )
+        }
+    }
+
+    private suspend fun awaitFirstFetch(): Boolean {
+        if (client.isReady()) {
+            return true
+        }
+
+        val firstFetch = CompletableDeferred<Unit>()
+        val listener =
+            object : UnleashReadyListener {
+                override fun onReady() {
+                    firstFetch.complete(Unit)
+                }
+            }
+
+        client.addUnleashEventListener(listener)
+        return try {
+            withTimeoutOrNull(initializationTimeout) { firstFetch.await() } != null
+        } finally {
+            client.removeUnleashEventListener(listener)
+        }
     }
 
     override fun shutdown() {
@@ -168,6 +215,9 @@ class UnleashOpenFeatureProvider private constructor(
         override val name: String?,
     ) : ProviderMetadata
 }
+
+private const val TAG = "UnleashOpenFeatureProvider"
+private val DEFAULT_INITIALIZATION_TIMEOUT = 5.seconds
 
 private const val SDK_FLAVOUR = "unleash-openfeature-android-provider"
 private val SDK_FLAVOUR_VERSION = BuildConfig.SDK_FLAVOUR_VERSION

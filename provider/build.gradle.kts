@@ -29,6 +29,10 @@ android {
         jvmTarget = "1.8"
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     publishing {
         singleVariant("release") {
             withSourcesJar()
