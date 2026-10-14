@@ -43,6 +43,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
     api(libs.openfeature.android.sdk)
     api(libs.unleash.android)
     testImplementation(libs.junit)

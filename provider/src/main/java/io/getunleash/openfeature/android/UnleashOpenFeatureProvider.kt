@@ -52,7 +52,7 @@ class UnleashOpenFeatureProvider private constructor(
         ),
         hooks,
         initializationTimeout,
-        Dispatchers.Main,
+        Dispatchers.Main.immediate,
     )
 
     internal constructor(
@@ -217,7 +217,7 @@ class UnleashOpenFeatureProvider private constructor(
 }
 
 private const val TAG = "UnleashOpenFeatureProvider"
-private val DEFAULT_INITIALIZATION_TIMEOUT = 5.seconds
+private val DEFAULT_INITIALIZATION_TIMEOUT = 3.seconds
 
 private const val SDK_FLAVOUR = "unleash-openfeature-android-provider"
 private val SDK_FLAVOUR_VERSION = BuildConfig.SDK_FLAVOUR_VERSION

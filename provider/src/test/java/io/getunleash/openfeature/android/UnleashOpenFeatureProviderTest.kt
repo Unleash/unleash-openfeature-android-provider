@@ -11,6 +11,10 @@ import io.getunleash.android.data.UnleashContext
 import io.getunleash.android.data.Variant
 import io.getunleash.android.events.UnleashListener
 import io.getunleash.android.events.UnleashReadyListener
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -82,6 +86,26 @@ class UnleashOpenFeatureProviderTest {
         runSuspend { provider.initialize(null) }
 
         assertFalse(client.isReady())
+        assertTrue("ready listener was leaked", client.listeners.isEmpty())
+    }
+
+    @Test
+    fun initializeResumesWhenReadinessArrivesWhileWaiting() {
+        val client = FakeUnleash(readiness = Readiness.NEVER)
+        val provider = UnleashOpenFeatureProvider(clientFactory = { client })
+
+        runBlocking {
+            withTimeout(2_000) {
+                val initializing = launch { provider.initialize(null) }
+                while (client.listeners.isEmpty()) {
+                    yield()
+                }
+                client.becomeReady()
+                initializing.join()
+            }
+        }
+
+        assertTrue(client.isReady())
         assertTrue("ready listener was leaked", client.listeners.isEmpty())
     }
 
@@ -207,7 +231,7 @@ class UnleashOpenFeatureProviderTest {
 }
 
 private fun runSuspend(block: suspend () -> Unit) {
-    kotlinx.coroutines.runBlocking {
+    runBlocking {
         block()
     }
 }
@@ -302,7 +326,7 @@ private class FakeUnleash(
         }
     }
 
-    private fun becomeReady() {
+    fun becomeReady() {
         ready = true
         listeners.filterIsInstance<UnleashReadyListener>().forEach { it.onReady() }
     }
