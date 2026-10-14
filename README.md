@@ -47,6 +47,31 @@ git -C verifier pull --ff-only
 git add verifier
 ```
 
+## Initialization
+
+`initialize()` starts the underlying Unleash client and waits for the first toggle
+state to land, so `OpenFeatureAPI.setProviderAndWait(...)` returns with flags in hand.
+That state may come from the network or from the local backup on disk, so readiness
+means usable flags rather than fresh ones. The client is started by the provider
+regardless of `delayedInitialization`, which Unleash leaves enabled by default.
+
+The wait is bounded, because Unleash signals readiness only once a non-empty toggle set
+arrives, and three configurations never produce one: a failed fetch, a project with no
+toggles, and `pollingStrategy.enabled = false`. On timeout the provider logs a warning
+and evaluations fall back to defaults until the background poll catches up. Three
+seconds is the default:
+
+```kotlin
+UnleashOpenFeatureProvider(
+    androidContext = androidContext,
+    unleashConfig = config,
+    initializationTimeout = 2.seconds,
+)
+```
+
+Do not gate your first frame on this call: on a cold start with no connectivity it
+suspends for the full timeout.
+
 ## Build
 
 ```bash
