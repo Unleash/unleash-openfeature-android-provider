@@ -10,9 +10,17 @@ import io.getunleash.android.data.Toggle
 import io.getunleash.android.data.UnleashContext
 import io.getunleash.android.data.Variant
 import io.getunleash.android.events.UnleashListener
+import io.getunleash.android.events.UnleashReadyListener
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 class UnleashOpenFeatureProviderTest {
     @Test
@@ -43,6 +51,62 @@ class UnleashOpenFeatureProviderTest {
             ),
             client.asyncContexts.single(),
         )
+    }
+
+    @Test
+    fun initializeStartsUnleashAfterSettingTheContext() {
+        val client = FakeUnleash()
+        val provider = UnleashOpenFeatureProvider(clientFactory = { client })
+
+        runSuspend { provider.initialize(null) }
+
+        assertEquals(listOf("setContextAsync", "start"), client.calls)
+    }
+
+    @Test
+    fun initializeWaitsForTheFirstFetch() {
+        val client = FakeUnleash(readiness = Readiness.ON_LISTENER)
+        val provider = UnleashOpenFeatureProvider(clientFactory = { client })
+
+        runSuspend { provider.initialize(null) }
+
+        assertTrue(client.isReady())
+        assertTrue("ready listener was leaked", client.listeners.isEmpty())
+    }
+
+    @Test
+    fun initializeGivesUpWaitingWhenNoTogglesArrive() {
+        val client = FakeUnleash(readiness = Readiness.NEVER)
+        val provider =
+            UnleashOpenFeatureProvider(
+                clientFactory = { client },
+                initializationTimeout = 50.milliseconds,
+            )
+
+        runSuspend { provider.initialize(null) }
+
+        assertFalse(client.isReady())
+        assertTrue("ready listener was leaked", client.listeners.isEmpty())
+    }
+
+    @Test
+    fun initializeResumesWhenReadinessArrivesWhileWaiting() {
+        val client = FakeUnleash(readiness = Readiness.NEVER)
+        val provider = UnleashOpenFeatureProvider(clientFactory = { client })
+
+        runBlocking {
+            withTimeout(2_000) {
+                val initializing = launch { provider.initialize(null) }
+                while (client.listeners.isEmpty()) {
+                    yield()
+                }
+                client.becomeReady()
+                initializing.join()
+            }
+        }
+
+        assertTrue(client.isReady())
+        assertTrue("ready listener was leaked", client.listeners.isEmpty())
     }
 
     @Test
@@ -167,16 +231,26 @@ class UnleashOpenFeatureProviderTest {
 }
 
 private fun runSuspend(block: suspend () -> Unit) {
-    kotlinx.coroutines.runBlocking {
+    runBlocking {
         block()
     }
 }
 
+private enum class Readiness {
+    ON_START,
+    ON_LISTENER,
+    NEVER,
+}
+
 private class FakeUnleash(
     private val variants: Map<String, Variant> = emptyMap(),
+    private val readiness: Readiness = Readiness.ON_START,
 ) : Unleash {
     val contexts = mutableListOf<UnleashContext>()
     val asyncContexts = mutableListOf<UnleashContext>()
+    val listeners = mutableListOf<UnleashListener>()
+    val calls = mutableListOf<String>()
+    private var ready = false
 
     @Deprecated(
         "Use isEnabled(toggleName: String) instead. See https://github.com/Unleash/unleash-android-sdk/issues/141",
@@ -213,12 +287,18 @@ private class FakeUnleash(
 
     override fun setContextAsync(context: UnleashContext) {
         asyncContexts += context
+        calls += "setContextAsync"
     }
 
     override fun addUnleashEventListener(listener: UnleashListener) {
+        listeners += listener
+        if (readiness == Readiness.ON_LISTENER) {
+            becomeReady()
+        }
     }
 
     override fun removeUnleashEventListener(listener: UnleashListener) {
+        listeners -= listener
     }
 
     override fun refreshTogglesNow() {
@@ -233,13 +313,22 @@ private class FakeUnleash(
     override fun sendMetricsNowAsync() {
     }
 
-    override fun isReady(): Boolean = true
+    override fun isReady(): Boolean = ready
 
     override fun start(
         eventListeners: List<UnleashListener>,
         bootstrapFile: File?,
         bootstrap: List<Toggle>,
     ) {
+        calls += "start"
+        if (readiness == Readiness.ON_START) {
+            becomeReady()
+        }
+    }
+
+    fun becomeReady() {
+        ready = true
+        listeners.filterIsInstance<UnleashReadyListener>().forEach { it.onReady() }
     }
 
     override fun close() {

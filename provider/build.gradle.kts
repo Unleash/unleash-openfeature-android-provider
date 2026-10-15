@@ -29,6 +29,10 @@ android {
         jvmTarget = "1.8"
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -39,6 +43,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
     api(libs.openfeature.android.sdk)
     api(libs.unleash.android)
     testImplementation(libs.junit)
